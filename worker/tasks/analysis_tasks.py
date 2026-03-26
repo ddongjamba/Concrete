@@ -195,13 +195,9 @@ def run_inspection_analysis(self, inspection_id: str, job_id: str):
 
 @app.task(name="tasks.analysis_tasks.match_defect_tracks")
 def match_defect_tracks(inspection_id: str):
-    """
-    이전 점검과 균열 매칭 → defect_tracks / defect_track_entries 업데이트
-    Phase 2에서 GPS/ORB 매칭 구현 예정.
-    """
-    log.info("track_matching_started", inspection_id=inspection_id)
-    # TODO Phase 2
-    log.info("track_matching_completed", inspection_id=inspection_id)
+    """균열 추적 매칭 → tracking_tasks로 위임"""
+    from tasks.tracking_tasks import match_defect_tracks as _match
+    _match.delay(inspection_id)
 
 
 @app.task(name="tasks.analysis_tasks.ping")

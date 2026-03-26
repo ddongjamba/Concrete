@@ -12,6 +12,7 @@ class TrackStatus(str, enum.Enum):
     worsening = "worsening"
     stable = "stable"
     repaired = "repaired"
+    needs_review = "needs_review"   # 자동 매칭 신뢰도 낮음, 수동 확인 필요
 
 
 class DefectTrack(UUIDBase):
