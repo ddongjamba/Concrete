@@ -1,4 +1,5 @@
 fastapi==0.111.0
+email-validator==2.1.1
 uvicorn[standard]==0.29.0
 sqlalchemy[asyncio]==2.0.30
 asyncpg==0.29.0

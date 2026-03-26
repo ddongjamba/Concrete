@@ -28,11 +28,12 @@ app.add_middleware(
 )
 
 
+from app.routers import auth, projects
+
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
+app.include_router(projects.router, prefix="/api/v1/projects", tags=["projects"])
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok", "version": "0.1.0"}
-
-
-# Routers will be registered here in Phase 1
-# from app.routers import auth, projects, inspections, analysis, reports, billing
-# app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
