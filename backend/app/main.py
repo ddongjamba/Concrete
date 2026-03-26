@@ -28,7 +28,7 @@ app.add_middleware(
 )
 
 
-from app.routers import auth, projects, inspections
+from app.routers import auth, projects, inspections, analysis
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(projects.router, prefix="/api/v1/projects", tags=["projects"])
@@ -37,6 +37,7 @@ app.include_router(
     prefix="/api/v1/projects/{project_id}/inspections",
     tags=["inspections"],
 )
+app.include_router(analysis.router, prefix="/api/v1/analysis", tags=["analysis"])
 
 
 @app.get("/health")
