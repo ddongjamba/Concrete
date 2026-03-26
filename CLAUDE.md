@@ -207,6 +207,26 @@ GET /admin/dlq
 | Phase 3 | DLQ + RLS + 구조화 로깅 + Prometheus | ✅ |
 | Frontend | 대시보드 + AnnotationViewer + DefectTimelineChart | ✅ |
 
+## 자동 배포 트리거 (Claude Code Stop 훅)
+
+코드 변경 후 Claude가 응답을 마치면 자동으로 테스트 → 커밋 → 푸시를 실행.
+
+**설정 파일:**
+- `.claude/settings.json` — Stop 훅 등록
+- `.claude/hooks/test-and-push.sh` — 실행 스크립트
+
+**동작 순서:**
+1. 변경된 파일이 없으면 스킵
+2. `test_*.py` 파일이 있으면 `pytest -x` 실행 → 실패 시 커밋 중단
+3. `frontend/` 변경이 있으면 `tsc --noEmit` 타입체크 → 실패 시 커밋 중단
+4. 전체 통과 → `git add -A && git commit && git push origin main`
+
+**비활성화 방법:**
+`.claude/settings.json`에서 해당 훅 항목을 삭제하거나 `"disableAllHooks": true` 추가.
+
+**테스트 추가 시 자동 적용:**
+`test_*.py` 파일을 생성하면 다음 Stop 시점부터 pytest가 자동 실행됨.
+
 ## 보안
 - JWT: 15분 access token + 30일 refresh token (localStorage)
 - 모든 DB 쿼리: `tenant_id` 필터 강제 (ContextVar 미들웨어) + PostgreSQL RLS 이중 차단
