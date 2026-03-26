@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/jimmy/Developer/SideProject/facade-inspect/.claude/hooks/test-and-push.sh",
+            "timeout": 120,
+            "statusMessage": "테스트 실행 후 자동 커밋·푸시 중...",
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
+}
