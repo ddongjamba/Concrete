@@ -1,7 +1,7 @@
 import uuid
 from datetime import date, datetime
 from sqlalchemy import String, Enum, ForeignKey, Date, DateTime, SmallInteger, Numeric
-from sqlalchemy.dialects.postgresql import JSONB
+from app.models.compat import JsonType as JSONB
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from app.models.base import UUIDBase
 import enum

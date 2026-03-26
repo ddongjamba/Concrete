@@ -1,6 +1,6 @@
 import uuid
 from sqlalchemy import String, Enum, ForeignKey, DateTime, SmallInteger, Numeric, Text
-from sqlalchemy.dialects.postgresql import JSONB
+from app.models.compat import JsonType as JSONB
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from app.models.base import UUIDBase
 from datetime import datetime
@@ -65,7 +65,7 @@ class AnalysisResult(UUIDBase):
     affected_area_pct: Mapped[float | None] = mapped_column(Numeric(6, 4))
     annotated_image_key: Mapped[str | None] = mapped_column(String(1000))
     segmentation_mask_key: Mapped[str | None] = mapped_column(String(1000))
-    metadata: Mapped[dict | None] = mapped_column(JSONB)
+    extra_data: Mapped[dict | None] = mapped_column(JSONB)
 
     job: Mapped["AnalysisJob"] = relationship(back_populates="results")
     track_entry: Mapped["DefectTrackEntry | None"] = relationship(back_populates="analysis_result")
