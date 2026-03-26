@@ -134,12 +134,14 @@ def run_inspection_analysis(self, inspection_id: str, job_id: str):
                         id, job_id, inspection_file_id, tenant_id,
                         defect_type, severity_score, severity, confidence,
                         bounding_box, crack_width_mm, crack_length_mm,
-                        crack_area_cm2, affected_area_pct, annotated_image_key,
+                        crack_area_cm2, affected_area_pct,
+                        annotated_image_key, segmentation_mask_key,
                         created_at, updated_at
                     ) VALUES (
                         :id, :job_id, :file_id, :tenant_id,
                         :defect_type, :score, :severity, :conf,
-                        :bbox, :width, :length, :area, :area_pct, :img_key,
+                        :bbox, :width, :length, :area, :area_pct,
+                        :img_key, :mask_key,
                         :now, :now
                     )
                 """), {
@@ -157,6 +159,7 @@ def run_inspection_analysis(self, inspection_id: str, job_id: str):
                     "area": r.crack_area_cm2,
                     "area_pct": r.affected_area_pct,
                     "img_key": r.annotated_image_key,
+                    "mask_key": getattr(r, "segmentation_mask_key", None),
                     "now": datetime.now(timezone.utc),
                 })
 

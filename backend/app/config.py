@@ -30,6 +30,14 @@ class Settings(BaseSettings):
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""
 
+    # Email (SMTP)
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    email_from: str = "noreply@facade-inspect.com"
+    email_enabled: bool = False   # 프로덕션에서 True로 설정
+
     class Config:
         env_file = ".env"
         case_sensitive = False

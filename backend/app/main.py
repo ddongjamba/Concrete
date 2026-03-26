@@ -28,7 +28,7 @@ app.add_middleware(
 )
 
 
-from app.routers import auth, projects, inspections, analysis, defect_tracks, reports, billing
+from app.routers import auth, projects, inspections, analysis, defect_tracks, alerts, reports, billing
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(projects.router, prefix="/api/v1/projects", tags=["projects"])
@@ -39,6 +39,7 @@ app.include_router(
 )
 app.include_router(analysis.router, prefix="/api/v1/analysis", tags=["analysis"])
 app.include_router(defect_tracks.router, prefix="/api/v1", tags=["defect-tracks"])
+app.include_router(alerts.router, prefix="/api/v1", tags=["alerts"])
 app.include_router(reports.router, prefix="/api/v1", tags=["reports"])
 app.include_router(billing.router, prefix="/api/v1/billing", tags=["billing"])
 

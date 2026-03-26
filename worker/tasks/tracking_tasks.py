@@ -503,9 +503,120 @@ def match_defect_tracks(inspection_id: str):
 
         db.commit()
 
+        # 6. 악화 알림 발송 (worsening 으로 변경된 트랙만)
+        worsening_entries = [
+            e for e in entries
+            if e.get("track_status_update") == "worsening"
+        ]
+        if worsening_entries:
+            _send_worsening_alerts(
+                db, worsening_entries, project_id, tenant_id,
+            )
+
     log.info(
         "track_matching_completed",
         inspection_id=inspection_id,
         entries_created=len(entries),
         new_tracks=sum(1 for e in entries if e["change_vs_prev"] is None),
+        worsening_alerts=len(worsening_entries) if worsening_entries else 0,
     )
+
+
+def _send_worsening_alerts(db: Session, worsening_entries: list[dict],
+                           project_id: str, tenant_id: str) -> None:
+    """악화 균열에 대해 이메일 + 앱 내 알림 발송"""
+    import sys
+    sys.path.insert(0, "/app/backend")
+    try:
+        from app.services.alert_service import send_worsening_alert, insert_in_app_alert
+    except ImportError:
+        # 워커 환경에서 백엔드 임포트 불가능한 경우 — 이메일만 직접 처리
+        send_worsening_alert = None
+        insert_in_app_alert = None
+
+    # 프로젝트명 조회
+    proj = db.execute(text("""
+        SELECT name FROM projects WHERE id = :id
+    """), {"id": project_id}).fetchone()
+    project_name = proj.name if proj else "알 수 없는 프로젝트"
+
+    # 테넌트 admin/manager 이메일 조회
+    recipients_rows = db.execute(text("""
+        SELECT email FROM users
+        WHERE tenant_id = :tid AND role IN ('admin', 'manager')
+        AND deleted_at IS NULL
+    """), {"tid": tenant_id}).fetchall()
+    recipients = [r.email for r in recipients_rows]
+
+    for entry in worsening_entries:
+        track_id = entry["track_id_for_status"]
+        change = json.loads(entry["change_vs_prev"]) if entry.get("change_vs_prev") else {}
+
+        # 트랙 location_zone 조회
+        track_row = db.execute(text("""
+            SELECT location_zone FROM defect_tracks WHERE id = :id
+        """), {"id": track_id}).fetchone()
+        location_zone = track_row.location_zone if track_row else None
+
+        score_before = entry["severity_score"] - change.get("score_delta", 0)
+        score_after = entry["severity_score"]
+
+        # 이메일
+        if send_worsening_alert and recipients:
+            send_worsening_alert(
+                recipients=recipients,
+                project_name=project_name,
+                location_zone=location_zone,
+                track_id=track_id,
+                score_before=score_before,
+                score_after=score_after,
+                crack_width_mm=entry.get("crack_width_mm"),
+                width_delta=change.get("width_delta"),
+            )
+
+        # 앱 내 알림 (defect_alerts 테이블)
+        if insert_in_app_alert:
+            try:
+                insert_in_app_alert(
+                    db,
+                    tenant_id=tenant_id,
+                    track_id=track_id,
+                    project_name=project_name,
+                    location_zone=location_zone,
+                    score_before=score_before,
+                    score_after=score_after,
+                )
+                db.commit()
+            except Exception as e:
+                log.warning("in_app_alert_failed", error=str(e))
+        else:
+            # 직접 INSERT (백엔드 임포트 실패 시)
+            _insert_alert_direct(db, tenant_id=tenant_id, track_id=track_id,
+                                 project_name=project_name, location_zone=location_zone,
+                                 score_before=score_before, score_after=score_after)
+
+
+def _insert_alert_direct(db: Session, *, tenant_id: str, track_id: str,
+                         project_name: str, location_zone: str | None,
+                         score_before: int, score_after: int) -> None:
+    """백엔드 서비스 임포트 없이 직접 alert 삽입"""
+    now = datetime.now(timezone.utc)
+    alert_id = str(uuid.uuid4())
+    try:
+        db.execute(text("""
+            INSERT INTO defect_alerts (
+                id, tenant_id, track_id, alert_type, title, body, is_read, created_at, updated_at
+            ) VALUES (
+                :id, :tid, :track_id, 'worsening', :title, :body, false, :now, :now
+            )
+        """), {
+            "id": alert_id,
+            "tid": tenant_id,
+            "track_id": track_id,
+            "title": f"균열 악화 — {project_name} {location_zone or ''}".strip(),
+            "body": f"심각도 점수 {score_before} → {score_after} (△{score_after - score_before:+d})",
+            "now": now,
+        })
+        db.commit()
+    except Exception as e:
+        log.warning("direct_alert_insert_failed", error=str(e))
